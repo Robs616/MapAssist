@@ -56,6 +56,39 @@ namespace MapAssist
             _window.DrawGraphics += _window_DrawGraphics;
             _window.DestroyGraphics += _window_DestroyGraphics;
         }
+        
+        private bool GetIsOverlayHidden(bool show, bool errorLoadingAreaData, Graphics gfx)
+        {
+            if (!show)
+                return true;
+            
+            if (errorLoadingAreaData)
+                return true;
+            
+            if (MapAssistConfiguration.Loaded.RenderingConfiguration.ToggleViaInGameMap && !_gameData.MenuOpen.Map)
+                return true;
+            
+            if (MapAssistConfiguration.Loaded.RenderingConfiguration.ToggleViaInGamePanels && _gameData.MenuPanelOpen > 0)
+                return true;
+            
+            if (MapAssistConfiguration.Loaded.RenderingConfiguration.ToggleViaInGamePanels && _gameData.MenuOpen.EscMenu)
+                return true;
+            
+            if (Array.Exists(MapAssistConfiguration.Loaded.HiddenAreas, area => area == _gameData.Area))
+                return true;
+            
+            if (_gameData.Area == Area.None)
+                return true;
+
+            if (gfx.Width == 1)
+                return true;
+
+            if (gfx.Height == 1)
+                return true;
+
+            return false;
+        }
+
 
         private void _window_DrawGraphics(object sender, DrawGraphicsEventArgs e)
         {
@@ -83,16 +116,8 @@ namespace MapAssist
 
                         var errorLoadingAreaData = _compositor._areaData == null;
 
-                        var overlayHidden = !_show ||
-                            errorLoadingAreaData ||
-                            (MapAssistConfiguration.Loaded.RenderingConfiguration.ToggleViaInGameMap && !_gameData.MenuOpen.Map) ||
-                            (MapAssistConfiguration.Loaded.RenderingConfiguration.ToggleViaInGamePanels && _gameData.MenuPanelOpen > 0) ||
-                            (MapAssistConfiguration.Loaded.RenderingConfiguration.ToggleViaInGamePanels && _gameData.MenuOpen.EscMenu) ||
-                            Array.Exists(MapAssistConfiguration.Loaded.HiddenAreas, area => area == _gameData.Area) ||
-                            _gameData.Area == Area.None ||
-                            gfx.Width == 1 ||
-                            gfx.Height == 1;
-
+                        var overlayHidden = GetIsOverlayHidden(_show, errorLoadingAreaData, gfx);
+                        
                         var size = MapAssistConfiguration.Loaded.RenderingConfiguration.Size;
 
                         var drawBounds = new Rectangle(0, 0, gfx.Width, gfx.Height * 0.78f);
